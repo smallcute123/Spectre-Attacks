@@ -2,10 +2,12 @@
 
 Spectre V1 attack using LRU channel
 
+The code is modified from the following paper:
+Leaking Information Through Cache LRU States in Commercial Processors and Secure Caches
+https://caslab.csl.yale.edu/code/cache-lru-attack/
+
 Authors: Wenjie Xiong (wenjie.xiong@yale.edu) and Jakub Szefer (jakub.szefer@yale.edu)
 
-The code is based on the code in the following paper:
-Kocher, Paul, et al. "Spectre attacks: Exploiting speculative execution." arXiv preprint arXiv:1801.01203 (2018).
 
 */
 

@@ -1,6 +1,6 @@
 /*
 
-Spectre V1 attack using flush+reload channel
+Spectre V1 attack using Flush+Reload channel
 
 The code is based on the code in the following paper:
 Kocher, Paul, et al. "Spectre attacks: Exploiting speculative execution." arXiv preprint arXiv:1801.01203 (2018).
