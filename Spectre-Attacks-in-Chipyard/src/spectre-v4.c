@@ -1,22 +1,8 @@
 /*-------------------------------------------------------------------------------
-// This code is modified from Shawn Liu's version.
-// E-mail:  shawn110285@gmail.com
-// Description: the control module
-// POC on the spectre attack via store bypass
+// This code is modified from Shawn Liu's version from https://github.com/shawn110285/side_channel_attack_on_o3_cpu/
+// Based on Horn and Jann, "Speculative Execution, variant 4: Speculative store bypass",https://bugs.chromium.org/p/project-zero/issues/detail?id=
+1528.
 --------------------------------------------------------------------------------*/
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//-----------------------------------------------------------------
 
 #include <stdio.h>
 #include <stdint.h>

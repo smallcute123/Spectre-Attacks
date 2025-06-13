@@ -1,5 +1,6 @@
 /*-------------------------------------------------------------------------------
 // This code is modified from Shawn Liu's version from https://github.com/shawn110285/side_channel_attack_on_o3_cpu/
+// Based on this paper: Koruyeh, Esmaeil Mohammadian, et al., "Spectre returns! speculation attacks using the return stack buffer",12nd USENIX Workshop on Offensive Technologies (WOOT 18)
 --------------------------------------------------------------------------------*/
 #include <stdio.h>
 #include <stdint.h>

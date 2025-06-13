@@ -1,5 +1,6 @@
 /*-------------------------------------------------------------------------------
 // This code is modified from Shawn Liu's version from https://github.com/shawn110285/side_channel_attack_on_o3_cpu/
+// Based on this paper : Kocher, Paul, et al. "Spectre attacks: Exploiting speculative execution." arXiv preprint arXiv:1801.01203 (2018).
 --------------------------------------------------------------------------------*/
 #include <stdio.h>
 #include <stdint.h> 

