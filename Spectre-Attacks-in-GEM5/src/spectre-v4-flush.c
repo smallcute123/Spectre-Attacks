@@ -2,7 +2,7 @@
 
 Spectre V4 attack using Flush+Reload channel
 The code is based on the code in the following website:
-Speculative Execution, variant 4: Speculative store bypass,https://bugs.chromium.org/p/project-zero/issues/detail?id=
+Horn and Jann, "Speculative Execution, variant 4: Speculative store bypass",https://bugs.chromium.org/p/project-zero/issues/detail?id=
 1528.
 */
 
